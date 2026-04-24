@@ -10,24 +10,30 @@
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Kalam:wght@300;400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 
 <style>
+/* Reset & Anti-Text-Selection & Anti-Scroll Mobile */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { 
     width: 100%; height: 100%; overflow: hidden; 
     cursor: none; background-color: #C8A96E; 
     user-select: none; -webkit-user-select: none; 
-    overscroll-behavior: none; touch-action: none;
+    overscroll-behavior: none; touch-action: none; 
 }
 
 #game-container { 
-    width: 100vw; height: 100vh; position: relative; 
+    width: 100%; 
+    height: 100vh;      /* Fallback untuk browser lama */
+    height: 100dvh;     /* PERBAIKAN: Menyesuaikan otomatis dengan toolbar HP */
+    position: relative; 
     font-family: 'Kalam', cursive; overflow: hidden; 
 }
 
+/* Canvas area main */
 #canvas-holder { 
     position: absolute; top: 42px; left: 0; width: 100%; height: calc(100% - 42px); 
     z-index: 10; pointer-events: none; 
 }
 
+/* TEKSTUR KERTAS KRAFT REALISTIS */
 .kraft-bg { 
     position: absolute; inset: 0; z-index: 1; 
     background-color: #C8A96E;
@@ -40,6 +46,7 @@ html, body {
 .lined-paper { background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(139, 100, 50, 0.25) 28px); background-position: 0 40px; }
 .margin-line::after { content: ''; position: absolute; left: 48px; top: 0; bottom: 0; width: 1.5px; background: rgba(180, 60, 40, 0.35); z-index: 2; pointer-events: none; }
 
+/* HUD (Bilah Status Atas) */
 .fn-hud { 
     position: absolute; top: 0; left: 0; right: 0; z-index: 100; height: 42px; padding: 0 16px; 
     background: rgba(170,130,60,0.85); border-bottom: 1.5px solid rgba(100,60,20,0.4); 
@@ -49,6 +56,7 @@ html, body {
 .fn-progress-track { flex: 1; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; }
 #hud-progress { height: 100%; background: #1a3a1a; width: 100%; transition: width 0.3s; }
 
+/* Layar Overlay Base - Centering */
 .screen { 
     display: none; width: 100%; height: 100%; position: absolute; inset: 0; 
     overflow: hidden; z-index: 500; flex-direction: column; align-items: center; justify-content: center; 
@@ -56,12 +64,16 @@ html, body {
 }
 .screen.active { display: flex; }
 
+/* DEKORASI GARIS HITAM DI MENU AWAL */
 .bg-stripes {
     position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); 
     display: flex; flex-direction: column; gap: 15px; z-index: 0; 
 }
 .stripe-1, .stripe-3 { height: 18px; background-color: #1a1008; } 
 .stripe-2 { height: 120px; background-color: #1a1008; }
+
+/* PERBAIKAN: Menghapus "position: relative" agar kotak ini bisa pas di tengah (.screen) */
+#start-screen { background-color: transparent; padding: 20px; }
 
 .start-card {
     border: 3px solid #1a1008; border-radius: 40px; padding: 60px 40px; text-align: center;
@@ -73,6 +85,7 @@ html, body {
 .underline-rule { height: 3px; background: #1a1008; margin: 15px 0 35px; width: 100%; max-width: 380px; }
 .fn-handwriting { font-family: 'Kalam', cursive; font-size: 20px; color: #1c1c40; max-width: 550px; margin-bottom: 35px; line-height: 1.6; }
 
+/* Styling Tombol Utama */
 button { 
     font-family: 'Kalam', cursive; padding: 12px 35px; background: #1a1008; color: #C8A96E; 
     border: 2px solid #1a1008; border-radius: 5px; font-size: 18px; cursor: none; 
@@ -82,14 +95,17 @@ button * { pointer-events: none; }
 button:hover { background: #2a1a0c; transform: scale(1.03); }
 button:active { transform: scale(0.95); }
 
+/* Tombol Secondary */
 button.btn-outline { background: transparent; color: #1a1008; border: 2px solid #1a1008; }
 button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 
+/* Kursor Custom */
 #cursor-dot { 
     position: fixed; width: 16px; height: 16px; border: 2px solid #1c1c5a; border-radius: 50%; 
     pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: opacity 0.1s; 
 }
 
+/* Screens Status Game */
 #pause-screen { z-index: 700; background: rgba(100, 70, 30, 0.8); cursor: none; }
 #over-screen { background: rgba(107, 42, 26, 0.95); color: #D4B483; }
 #over-screen button.btn-outline { color: #D4B483; border-color: #D4B483; }
@@ -98,15 +114,11 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 .end-title { font-family: 'Special Elite', monospace; font-size: 52px; margin-bottom: 10px; text-align: center; }
 
 /* =========================================
-   RESPONSIVITAS MOBILE (HP) 
+   RESPONSIVITAS MOBILE (HP)
    ========================================= */
 @media (max-width: 600px) {
-    /* Padding diperkecil agar lega, border-radius disesuaikan */
     .start-card { padding: 40px 15px; border-radius: 30px; width: 95%; }
-    
-    /* UKURAN JUDUL DIPERKECIL MENJADI 34px (Sebelumnya 42px) */
     .fn-cover-stamp { font-size: 34px; }
-    
     .fn-handwriting { font-size: 16px; margin-bottom: 25px; }
     button { font-size: 16px; padding: 10px 25px; cursor: default; }
     .stripe-2 { height: 90px; }
@@ -149,7 +161,7 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
                 "Aku tahu susah, tapi sebisa mungkin jangan menyerah."<br><br>
                 Gunakan kursor/sentuhan untuk menghindari kata merah.
             </div>
-            <button id="start-btn-action">Mulai Tulis</button>
+            <button id="start-btn-action">— Mulai Tulis —</button>
         </div>
     </div>
 
@@ -158,8 +170,8 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
             <p id="pause-quote" style="font-family: 'Kalam', cursive; font-size: 18px; font-style: italic; margin-bottom: 20px; color: #1a1008;"></p>
             <p style="font-family: 'Special Elite'; font-size: 11px; color: #5a3a10; margin-bottom: 25px;">— SENTUH UNTUK MELANJUTKAN —</p>
             <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="resume-btn">Lanjut</button>
-                <button id="menu-btn-pause" class="btn-outline">Menu</button>
+                <button id="resume-btn">— Lanjut —</button>
+                <button id="menu-btn-pause" class="btn-outline">— Menu —</button>
             </div>
         </div>
     </div>
@@ -168,15 +180,15 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
         <h1 class="end-title">HALAMAN PENUH</h1>
         <p style="margin: 10px 0 30px;">Pikiran terlalu bising.</p>
         <div style="display: flex; gap: 15px; justify-content: center;">
-            <button id="retry-btn">Coba Lagi</button>
-            <button id="menu-btn-over" class="btn-outline">Menu</button>
+            <button id="retry-btn">— Coba Lagi —</button>
+            <button id="menu-btn-over" class="btn-outline">— Menu —</button>
         </div>
     </div>
 
     <div id="win-screen" class="screen">
         <h1 class="end-title">HALAMAN BERSIH</h1>
         <p style="margin: 10px 0 30px;">Kamu berhasil menjaga kejernihan.</p>
-        <button id="win-btn">Tulis Baru</button>
+        <button id="win-btn">— Tulis Baru —</button>
     </div>
 </div>
 
