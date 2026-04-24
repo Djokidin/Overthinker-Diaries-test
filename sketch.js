@@ -144,12 +144,11 @@ function draw() {
 }
 
 function updateInputPositions() {
-  // --- LOGIKA MOUSE VS TOUCH SCREEN ---
   if (touches.length > 0) {
       screenX = touches[0].x;
       screenY = touches[0].y;
       playerX = touches[0].x;
-      // UX Mobile: Jarak kursor 70px di atas jari agar tidak tertutup
+      // Jarak kursor di HP
       playerY = touches[0].y - 42 - 70; 
   } else {
       screenX = mouseX;
@@ -162,18 +161,16 @@ function updateInputPositions() {
 function handleSpawning() {
   let timePassed = 60 - timer;
   
-  // ADJUSTMENT LEVEL: Mobile dibuat lebih lambat spawn-nya
-  let baseRate = isMobile ? 16 : 12;
-  let minRate = isMobile ? 8 : 5;
+  // ADJUSTMENT: Spawn rate diperlambat drastis untuk HP
+  let baseRate = isMobile ? 22 : 12; // Awal game lebih santai
+  let minRate = isMobile ? 12 : 5;   // Akhir game tidak sebombastis PC
   let spawnRate = floor(map(timePassed, 0, 60, baseRate, minRate)); 
 
   if (frameCount % spawnRate === 0) {
-    // ADJUSTMENT LEVEL: Maksimal hanya 2 kata sekaligus di mobile
     let amt = (timePassed > 45 && !isMobile) ? 2 : 1; 
     
     for(let i=0; i<amt; i++) {
       let isSeeker = false;
-      // ADJUSTMENT LEVEL: Probabilitas seeker dikurangi di mobile (10% vs 30%)
       let seekerChance = isMobile ? 0.1 : 0.3;
       if (timePassed > 30 && random(1) < seekerChance) isSeeker = true;
 
@@ -260,7 +257,9 @@ class IdleWord {
     this.pos = createVector(x, y);
     this.vel = p5.Vector.random2D().mult(random(1, 2));
     this.text = random(["GAGAL", "TAKUT", "CEMAS", "SUSAH", "BINGUNG", "RAGU", "BODOH", "STUCK"]);
-    this.size = random(24, 38);
+    
+    // ADJUSTMENT: Ukuran teks idle di menu awal lebih kecil di HP
+    this.size = isMobile ? random(18, 26) : random(24, 38);
     this.maxSpeed = random(1.5, 3);
   }
 
@@ -299,7 +298,14 @@ class Word {
     this.isSeeker = isSeeker;
     this.isPos = isPos;
     this.text = isPos ? "TENANG" : random(["GAGAL", "TAKUT", "CEMAS", "SUSAH", "BINGUNG", "RAGU", "BODOH", "STUCK"]);
-    this.baseSize = isPos ? 42 : random(26, 36);
+    
+    // ADJUSTMENT: Ukuran teks saat in-game disesuaikan untuk HP
+    let posSize = isMobile ? 32 : 42; // Ukuran kata TENANG
+    let negMin = isMobile ? 18 : 26;  // Ukuran minimal kata negatif
+    let negMax = isMobile ? 26 : 36;  // Ukuran maksimal kata negatif
+    
+    this.baseSize = isPos ? posSize : random(negMin, negMax);
+    
     this.size = this.baseSize;
     this.pulseOffset = random(100);
   }
@@ -341,6 +347,7 @@ class Word {
     let centerX = this.pos.x + (textWidth(this.text) / 2);
     let centerY = this.pos.y + (this.size / 2);
     let d = dist(playerX, playerY, centerX, centerY);
+    // Area tabrakan (hitbox) akan otomatis menyesuaikan karena menggunakan textWidth()
     return d < (textWidth(this.text) / 1.7 + 10);
   }
 

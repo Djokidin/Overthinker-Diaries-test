@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Overthinker Diaries</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -10,18 +10,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Kalam:wght@300;400;700&family=Nanum+Pen+Script&display=swap" rel="stylesheet">
 
 <style>
-/* Reset & Anti-Text-Selection & Anti-Scroll Mobile */
+/* Reset & Anti-Text-Selection */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { 
     width: 100%; height: 100%; overflow: hidden; 
     cursor: none; background-color: #C8A96E; 
     user-select: none; -webkit-user-select: none; 
-    overscroll-behavior: none; /* Mencegah pull-to-refresh di HP */
-    touch-action: none; /* Mencegah browser memproses gesture swipe */
 }
 
+/* Mengganti vw/vh menjadi 100% untuk mencegah bug URL bar di Safari/Chrome HP */
 #game-container { 
-    width: 100vw; height: 100vh; position: relative; 
+    width: 100%; height: 100%; position: relative; 
     font-family: 'Kalam', cursive; overflow: hidden; 
 }
 
@@ -41,20 +40,27 @@ html, body {
         repeating-linear-gradient(-45deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px);
 }
 
-.lined-paper { background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(139, 100, 50, 0.25) 28px); background-position: 0 40px; }
-.margin-line::after { content: ''; position: absolute; left: 48px; top: 0; bottom: 0; width: 1.5px; background: rgba(180, 60, 40, 0.35); z-index: 2; pointer-events: none; }
+.lined-paper { 
+    background-image: repeating-linear-gradient(to bottom, transparent, transparent 27px, rgba(139, 100, 50, 0.25) 28px); 
+    background-position: 0 40px; 
+}
+.margin-line::after { 
+    content: ''; position: absolute; left: 48px; top: 0; bottom: 0; width: 1.5px; 
+    background: rgba(180, 60, 40, 0.35); z-index: 2; pointer-events: none; 
+}
 
 /* HUD (Bilah Status Atas) */
 .fn-hud { 
     position: absolute; top: 0; left: 0; right: 0; z-index: 100; height: 42px; padding: 0 16px; 
     background: rgba(170,130,60,0.85); border-bottom: 1.5px solid rgba(100,60,20,0.4); 
-    display: none; align-items: center; gap: 15px; font-family: 'Special Elite', monospace; font-size: 13px; color: #1a1008; 
+    display: none; 
+    align-items: center; gap: 15px; font-family: 'Special Elite', monospace; font-size: 13px; color: #1a1008; 
 }
 #hud-hearts { font-size: 15px; letter-spacing: 2px; min-width: 90px; color: #8b1a1a; font-weight: bold; }
 .fn-progress-track { flex: 1; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; }
 #hud-progress { height: 100%; background: #1a3a1a; width: 100%; transition: width 0.3s; }
 
-/* Layar Overlay Base - Centering Fix */
+/* Layar Overlay Base */
 .screen { 
     display: none; width: 100%; height: 100%; position: absolute; inset: 0; 
     overflow: hidden; z-index: 500; flex-direction: column; align-items: center; justify-content: center; 
@@ -64,19 +70,30 @@ html, body {
 
 /* DEKORASI GARIS HITAM DI MENU AWAL */
 .bg-stripes {
-    position: absolute; top: 50%; left: 0; width: 100%; transform: translateY(-50%); 
-    display: flex; flex-direction: column; gap: 15px; z-index: 0; 
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 100%;
+    transform: translateY(-50%); 
+    display: flex;
+    flex-direction: column;
+    gap: 15px; 
+    z-index: 0; 
 }
-.stripe-1, .stripe-3 { height: 18px; background-color: #1a1008; } 
+.stripe-1 { height: 18px; background-color: #1a1008; } 
 .stripe-2 { height: 120px; background-color: #1a1008; }
+.stripe-3 { height: 18px; background-color: #1a1008; } 
 
-/* Desain Layar Utama (Menu) - Solid & Centered */
+/* Desain Layar Utama (Menu) */
 #start-screen { background-color: transparent; padding: 20px; position: relative; }
 .start-card {
-    border: 3px solid #1a1008; border-radius: 40px; padding: 60px 40px; text-align: center;
-    display: flex; flex-direction: column; align-items: center; max-width: 700px; width: 90%; 
-    background: #C8A96E; position: relative; z-index: 1; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    border: 3px solid #1a1008; border-radius: 40px;
+    padding: 60px 40px; text-align: center;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    max-width: 700px; width: 90%; 
+    background: #C8A96E; 
+    position: relative;
+    z-index: 1; 
 }
 .fn-cover-stamp { font-family: 'Special Elite', monospace; font-size: 70px; font-weight: 900; color: #1a1008; line-height: 0.9; text-transform: uppercase;}
 .underline-rule { height: 3px; background: #1a1008; margin: 15px 0 35px; width: 100%; max-width: 380px; }
@@ -84,15 +101,16 @@ html, body {
 
 /* Styling Tombol Utama */
 button { 
-    font-family: 'Kalam', cursive; padding: 12px 35px; background: #1a1008; color: #C8A96E; 
-    border: 2px solid #1a1008; border-radius: 5px; font-size: 18px; cursor: none; 
-    position: relative; z-index: 600; pointer-events: all; transition: all 0.15s ease;
+    font-family: 'Kalam', cursive; padding: 12px 35px; 
+    background: #1a1008; color: #C8A96E; 
+    border: 2px solid #1a1008; border-radius: 5px; font-size: 18px;
+    cursor: none; position: relative; z-index: 600;
+    pointer-events: all; transition: all 0.15s ease;
 }
 button * { pointer-events: none; }
 button:hover { background: #2a1a0c; transform: scale(1.03); }
 button:active { transform: scale(0.95); }
 
-/* Tombol Secondary */
 button.btn-outline { background: transparent; color: #1a1008; border: 2px solid #1a1008; }
 button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 
@@ -104,6 +122,12 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 
 /* Screens Status Game */
 #pause-screen { z-index: 700; background: rgba(100, 70, 30, 0.8); cursor: none; }
+.pause-card {
+    background: #D4B483; border: 3px solid #1a1008; padding: 40px; 
+    text-align: center; max-width: 550px; width: 90%; border-radius: 10px; 
+    pointer-events: all; box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+}
+
 #over-screen { background: rgba(107, 42, 26, 0.95); color: #D4B483; }
 #over-screen button.btn-outline { color: #D4B483; border-color: #D4B483; }
 #over-screen button.btn-outline:hover { background: rgba(212, 180, 131, 0.1); }
@@ -111,21 +135,53 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 .end-title { font-family: 'Special Elite', monospace; font-size: 52px; margin-bottom: 10px; text-align: center; }
 
 /* =========================================
-   RESPONSIVITAS MOBILE (HP)
+   PENGATURAN RESPONSIVE KHUSUS HP
    ========================================= */
-@media (max-width: 600px) {
-    .start-card { padding: 40px 20px; border-radius: 30px; }
-    .fn-cover-stamp { font-size: 42px; }
-    .fn-handwriting { font-size: 16px; margin-bottom: 25px; }
-    button { font-size: 16px; padding: 10px 25px; cursor: default; }
-    .stripe-2 { height: 90px; }
+@media screen and (max-width: 768px) {
+    /* Menu Utama HP */
+    .start-card {
+        padding: 40px 20px; /* Kurangi padding agar kotak tidak menempel ke pinggir layar */
+        border-radius: 30px; /* Sudut disesuaikan */
+    }
+    .fn-cover-stamp {
+        font-size: 45px; /* Mengecilkan teks judul yang terlalu besar */
+    }
+    .fn-handwriting {
+        font-size: 16px; /* Teks deskripsi lebih kecil */
+        margin-bottom: 25px;
+    }
+    .underline-rule {
+        margin: 15px 0 25px;
+    }
     
-    .fn-hud { gap: 8px; font-size: 10px; padding: 0 8px; }
-    #hud-hearts { font-size: 12px; min-width: 75px; letter-spacing: -1px; }
-    #pause-btn { font-size: 10px; padding: 4px 8px; }
+    /* Dekorasi Garis Belakang HP */
+    .stripe-1 { height: 12px; } 
+    .stripe-2 { height: 80px; }
+    .stripe-3 { height: 12px; } 
 
-    .end-title { font-size: 38px; }
-    #over-screen p, #win-screen p { font-size: 18px; }
+    /* Menu Pause HP */
+    .pause-card {
+        padding: 30px 20px;
+    }
+    #pause-quote {
+        font-size: 17px !important;
+    }
+
+    /* Ukuran Judul Game Over & Win */
+    .end-title {
+        font-size: 40px;
+    }
+    
+    /* Tombol HP */
+    button {
+        padding: 10px 25px;
+        font-size: 16px;
+    }
+    
+    /* Kursor buatan disembunyikan di HP karena menggunakan layar sentuh */
+    #cursor-dot {
+        display: none !important;
+    }
 }
 </style>
 </head>
@@ -139,7 +195,7 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
         <span id="hud-hearts">FOKUS: ♥ ♥ ♥</span>
         <div class="fn-progress-track"><div id="hud-progress"></div></div>
         <span id="hud-score">avoided: 0</span>
-        <button id="pause-btn" style="font-family: 'Special Elite', monospace;">|| PAUSE</button>
+        <button id="pause-btn" style="padding: 2px 10px; font-size: 12px; font-family: 'Special Elite', monospace;">|| PAUSE</button>
     </div>
 
     <div id="canvas-holder"></div>
@@ -156,36 +212,37 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
             <div class="underline-rule"></div>
             <div class="fn-handwriting">
                 "Aku tahu susah, tapi sebisa mungkin jangan menyerah."<br><br>
-                Gunakan kursor/sentuhan untuk menghindari kata merah.
+                Gunakan kursor/sentuhan untuk menghindari kata merah.<br>
+                Fokus adalah kunci.
             </div>
-            <button id="start-btn-action">— Buka & Tulis —</button>
+            <button id="start-btn-action">— Mulai Tulis —</button>
         </div>
     </div>
 
     <div id="pause-screen" class="screen">
-        <div style="background: #D4B483; border: 3px solid #1a1008; padding: 30px; text-align: center; max-width: 85%; border-radius: 10px; pointer-events: all; box-shadow: 5px 5px 15px rgba(0,0,0,0.3);">
-            <p id="pause-quote" style="font-family: 'Kalam', cursive; font-size: 18px; font-style: italic; margin-bottom: 20px; color: #1a1008;"></p>
-            <p style="font-family: 'Special Elite'; font-size: 11px; color: #5a3a10; margin-bottom: 25px;">— SENTUH UNTUK MELANJUTKAN —</p>
-            <div style="display: flex; gap: 10px; justify-content: center;">
-                <button id="resume-btn">— Lanjut —</button>
-                <button id="menu-btn-pause" class="btn-outline">— Menu —</button>
+        <div class="pause-card">
+            <p id="pause-quote" style="font-family: 'Kalam', cursive; font-size: 20px; font-style: italic; margin-bottom: 20px; color: #1a1008;"></p>
+            <p style="font-family: 'Special Elite'; font-size: 11px; color: #5a3a10; margin-bottom: 25px;">— KLIK UNTUK MELANJUTKAN —</p>
+            <div style="display: flex; gap: 15px; justify-content: center;">
+                <button id="resume-btn">Lanjut</button>
+                <button id="menu-btn-pause" class="btn-outline">Menu</button>
             </div>
         </div>
     </div>
 
     <div id="over-screen" class="screen">
         <h1 class="end-title">HALAMAN PENUH</h1>
-        <p style="margin: 10px 0 30px;">Pikiran terlalu bising.</p>
+        <p style="margin: 10px 0 30px; font-size: 22px;">Pikiran terlalu bising.</p>
         <div style="display: flex; gap: 15px; justify-content: center;">
-            <button id="retry-btn">— Coba Lagi —</button>
-            <button id="menu-btn-over" class="btn-outline">— Menu —</button>
+            <button id="retry-btn">Coba Lagi</button>
+            <button id="menu-btn-over" class="btn-outline">Menu</button>
         </div>
     </div>
 
     <div id="win-screen" class="screen">
         <h1 class="end-title">HALAMAN BERSIH</h1>
-        <p style="margin: 10px 0 30px;">Kamu berhasil menjaga kejernihan.</p>
-        <button id="win-btn">— Tulis Baru —</button>
+        <p style="margin: 10px 0 30px; font-size: 22px;">Kamu berhasil menjaga kejernihan.</p>
+        <button id="win-btn">Tulis Baru</button>
     </div>
 </div>
 
