@@ -30,6 +30,12 @@ function setup() {
   cnv.parent('canvas-holder');
   noCursor();
   
+  // Set kursor berada di tengah layar saat game pertama kali dibuka
+  playerX = width / 2;
+  playerY = height / 2;
+  screenX = width / 2;
+  screenY = height / 2;
+  
   initControls(); 
   spawnIdleWords(); 
 }
@@ -88,6 +94,12 @@ function backToMenu() {
   const hud = document.querySelector('.fn-hud');
   if (hud) hud.style.display = 'none';
   
+  // Reset posisi ke tengah saat kembali ke menu
+  playerX = width / 2;
+  playerY = height / 2;
+  screenX = width / 2;
+  screenY = height / 2;
+  
   spawnIdleWords(); 
   showScreen('start');
   updateHTML_HUD();
@@ -145,25 +157,28 @@ function draw() {
 
 function updateInputPositions() {
   if (touches.length > 0) {
+      // PERBAIKAN: Selalu perbarui koordinat JIKA sedang disentuh
       screenX = touches[0].x;
       screenY = touches[0].y;
       playerX = touches[0].x;
-      // Jarak kursor di HP
-      playerY = touches[0].y - 42 - 70; 
-  } else {
+      playerY = touches[0].y - 42 - 70; // Jarak kursor 70px di HP
+  } else if (!isMobile) {
+      // HANYA gunakan fungsi Mouse jika pemain bermain di PC
+      // Ini mencegah bug kursor pindah ke (0,0) saat jari dilepas di layar HP
       screenX = mouseX;
       screenY = mouseY;
       playerX = mouseX;
       playerY = mouseY - 42; 
   }
+  // Catatan: Jika di mobile dan jari diangkat (touches.length == 0), 
+  // playerX dan playerY TIDAK akan diupdate, sehingga kursor membeku/diam di posisi terakhirnya.
 }
 
 function handleSpawning() {
   let timePassed = 60 - timer;
   
-  // ADJUSTMENT: Spawn rate diperlambat drastis untuk HP
-  let baseRate = isMobile ? 22 : 12; // Awal game lebih santai
-  let minRate = isMobile ? 12 : 5;   // Akhir game tidak sebombastis PC
+  let baseRate = isMobile ? 22 : 12; 
+  let minRate = isMobile ? 12 : 5;   
   let spawnRate = floor(map(timePassed, 0, 60, baseRate, minRate)); 
 
   if (frameCount % spawnRate === 0) {
@@ -258,7 +273,6 @@ class IdleWord {
     this.vel = p5.Vector.random2D().mult(random(1, 2));
     this.text = random(["GAGAL", "TAKUT", "CEMAS", "SUSAH", "BINGUNG", "RAGU", "BODOH", "STUCK"]);
     
-    // ADJUSTMENT: Ukuran teks idle di menu awal lebih kecil di HP
     this.size = isMobile ? random(18, 26) : random(24, 38);
     this.maxSpeed = random(1.5, 3);
   }
@@ -299,10 +313,9 @@ class Word {
     this.isPos = isPos;
     this.text = isPos ? "TENANG" : random(["GAGAL", "TAKUT", "CEMAS", "SUSAH", "BINGUNG", "RAGU", "BODOH", "STUCK"]);
     
-    // ADJUSTMENT: Ukuran teks saat in-game disesuaikan untuk HP
-    let posSize = isMobile ? 32 : 42; // Ukuran kata TENANG
-    let negMin = isMobile ? 18 : 26;  // Ukuran minimal kata negatif
-    let negMax = isMobile ? 26 : 36;  // Ukuran maksimal kata negatif
+    let posSize = isMobile ? 32 : 42; 
+    let negMin = isMobile ? 18 : 26;  
+    let negMax = isMobile ? 26 : 36;  
     
     this.baseSize = isPos ? posSize : random(negMin, negMax);
     
@@ -347,7 +360,6 @@ class Word {
     let centerX = this.pos.x + (textWidth(this.text) / 2);
     let centerY = this.pos.y + (this.size / 2);
     let d = dist(playerX, playerY, centerX, centerY);
-    // Area tabrakan (hitbox) akan otomatis menyesuaikan karena menggunakan textWidth()
     return d < (textWidth(this.text) / 1.7 + 10);
   }
 
