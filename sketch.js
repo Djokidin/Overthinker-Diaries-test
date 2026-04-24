@@ -10,16 +10,16 @@ let invTimer = 0;
 let paused = false;
 
 // --- DEKLARASI AUDIO ---
-const sfxClick = new Audio('click.mp3');
-const sfxHit = new Audio('hit.wav');
-const sfxHeal = new Audio('heal.wav');
+const sfxClick = new Audio('Click.mp3');
+const sfxHit = new Audio('Hit.wav');
+const sfxHeal = new Audio('Heal.wav');
 
 // BGM & Whispers
 const bgm = new Audio('bgm.mp3');
 bgm.loop = true;
 bgm.volume = 0.3; // Volume BGM in-game
 
-const sfxWhisper = new Audio('whisper.wav');
+const sfxWhisper = new Audio('Whisper.wav');
 sfxWhisper.loop = true;
 sfxWhisper.volume = 0.2; // Volume bisikan di menu & pause
 
