@@ -9,13 +9,31 @@ let isInvincible = false;
 let invTimer = 0;
 let paused = false;
 
-// Variabel Penampung Posisi Input (Mouse vs Layar Sentuh)
+// --- DEKLARASI AUDIO ---
+const sfxClick = new Audio('click.mp3');
+const sfxHit = new Audio('hit.wav');
+const sfxHeal = new Audio('heal.wav');
+
+// BGM & Whispers
+const bgm = new Audio('bgm.mp3');
+bgm.loop = true;
+bgm.volume = 0.3; // Volume BGM in-game
+
+const sfxWhisper = new Audio('whisper.wav');
+sfxWhisper.loop = true;
+sfxWhisper.volume = 0.2; // Volume bisikan di menu & pause
+
+// Atur volume SFX
+sfxClick.volume = 0.5; 
+sfxHit.volume = 0.7;
+sfxHeal.volume = 0.6;
+
+// Variabel Penampung Posisi Input
 let playerX = 0;
 let playerY = 0;
 let screenX = 0;
 let screenY = 0;
 
-// Cek apakah perangkat adalah mobile
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
 const QUOTES = [
@@ -30,7 +48,6 @@ function setup() {
   cnv.parent('canvas-holder');
   noCursor();
   
-  // Set kursor berada di tengah layar saat game pertama kali dibuka
   playerX = width / 2;
   playerY = height / 2;
   screenX = width / 2;
@@ -38,6 +55,13 @@ function setup() {
   
   initControls(); 
   spawnIdleWords(); 
+
+  // TRICK BROWSER: Mencoba memutar bisikan saat interaksi (sentuhan/klik) pertama kali di layar
+  document.addEventListener('pointerdown', () => {
+      if (gameState === "START" && sfxWhisper.paused) {
+          sfxWhisper.play().catch(e => console.log("Menunggu interaksi"));
+      }
+  }, { once: true });
 }
 
 function initControls() {
@@ -47,6 +71,10 @@ function initControls() {
       btn.onclick = function(e) {
         e.preventDefault();
         e.stopPropagation();
+        
+        sfxClick.currentTime = 0; 
+        sfxClick.play().catch(e => {});
+        
         func();
       };
     }
@@ -68,7 +96,6 @@ function initControls() {
   }
 }
 
-// Mencegah canvas men-scroll halaman di HP
 function touchMoved() {
     return false; 
 }
@@ -82,6 +109,11 @@ function startGame() {
   const hud = document.querySelector('.fn-hud');
   if (hud) hud.style.display = 'flex';
   
+  // AUDIO LOGIC: Matikan bisikan, nyalakan BGM
+  sfxWhisper.pause();
+  bgm.currentTime = 0; // Mulai BGM dari awal
+  bgm.play().catch(e => console.log("BGM tertunda"));
+  
   showScreen('none');
   updateHTML_HUD();
 }
@@ -94,11 +126,14 @@ function backToMenu() {
   const hud = document.querySelector('.fn-hud');
   if (hud) hud.style.display = 'none';
   
-  // Reset posisi ke tengah saat kembali ke menu
   playerX = width / 2;
   playerY = height / 2;
   screenX = width / 2;
   screenY = height / 2;
+  
+  // AUDIO LOGIC: Matikan BGM, nyalakan kembali bisikan
+  bgm.pause();
+  sfxWhisper.play().catch(e => {});
   
   spawnIdleWords(); 
   showScreen('start');
@@ -108,10 +143,20 @@ function backToMenu() {
 function togglePause() {
   if (gameState === "PLAYING") {
     paused = true; gameState = "PAUSED";
+    
+    // AUDIO LOGIC JEDA: BGM diam, bisikan datang
+    bgm.pause();
+    sfxWhisper.play().catch(e => {});
+    
     document.getElementById('pause-quote').textContent = random(QUOTES);
     showScreen('pause');
   } else if (gameState === "PAUSED") {
     paused = false; gameState = "PLAYING";
+    
+    // AUDIO LOGIC LANJUT: Bisikan hilang, BGM lanjut
+    sfxWhisper.pause();
+    bgm.play().catch(e => {});
+    
     showScreen('none');
   }
 }
@@ -135,7 +180,6 @@ function draw() {
   clear(); 
   updateInputPositions();
 
-  // Pindahkan Custom Cursor HTML
   let dot = document.getElementById('cursor-dot');
   if (dot) {
       dot.style.left = playerX + 'px';
@@ -160,7 +204,7 @@ function updateInputPositions() {
       screenX = touches[0].x;
       screenY = touches[0].y;
       playerX = touches[0].x;
-      playerY = touches[0].y - 42 - 70; // Jarak kursor 70px di atas jari HP
+      playerY = touches[0].y - 42 - 70; 
   } else if (!isMobile) {
       screenX = mouseX;
       screenY = mouseY;
@@ -194,30 +238,18 @@ function handleSpawning() {
   }
 }
 
-// PERBAIKAN: MEMBAWA KEMBALI STAGE 2
 function spawnWord(timePassed, isSeeker) {
   let x, y, vx = 0, vy = 0;
   
   if (timePassed < 15) {
-    // STAGE 1 (0-15s): Jatuh lurus dari atas
-    x = random(width); 
-    y = -30; 
-    vx = random(-1, 1);
-    vy = isMobile ? random(3, 5) : random(4, 7); // Sedikit lebih lambat di HP
-    
+    x = random(width); y = -30; vx = random(-1, 1);
+    vy = isMobile ? random(3, 5) : random(4, 7); 
   } else if (timePassed < 30) {
-    // STAGE 2 (15-30s): Menyebar (Starburst) dari tengah layar
     let angle = random(TWO_PI);
-    // Kecepatan sebar dikurangi di HP agar jari sempat menghindar
     let spd = isMobile ? random(3, 6) : random(5, 10); 
-    
-    x = width / 2; 
-    y = (height / 2) - 42; 
-    vx = cos(angle) * spd; 
-    vy = sin(angle) * spd;
-    
+    x = width / 2; y = (height / 2) - 42; 
+    vx = cos(angle) * spd; vy = sin(angle) * spd;
   } else {
-    // STAGE 3 (30-60s): Muncul dari pinggir dan/atau mengejar
     let side = floor(random(4));
     if (side === 0) { x = random(width); y = -50; }
     else if (side === 1) { x = width + 50; y = random(height); }
@@ -228,8 +260,7 @@ function spawnWord(timePassed, isSeeker) {
         let steer = createVector(width/2 - x, height/2 - y).normalize();
         let spd = isMobile ? random(2.5, 5) : random(3, 6);
         steer.mult(spd);
-        vx = steer.x; 
-        vy = steer.y;
+        vx = steer.x; vy = steer.y;
     }
   }
   
@@ -241,6 +272,10 @@ function runLogic() {
     words[i].update();
     words[i].display();
     if (!isInvincible && words[i].hitsPlayer()) {
+        
+      sfxHit.currentTime = 0;
+      sfxHit.play().catch(e => {});
+      
       hearts--; isInvincible = true; invTimer = 60;
       words.splice(i, 1); updateHTML_HUD();
     } else if (words[i].offScreen()) {
@@ -252,6 +287,10 @@ function runLogic() {
     encouragements[i].update();
     encouragements[i].display();
     if (encouragements[i].hitsPlayer()) {
+        
+      sfxHeal.currentTime = 0;
+      sfxHeal.play().catch(e => {});
+      
       if (hearts < 3) hearts++; 
       encouragements.splice(i, 1); 
       updateHTML_HUD();
@@ -260,8 +299,17 @@ function runLogic() {
 
   if (isInvincible) { invTimer--; if (invTimer <= 0) isInvincible = false; }
   
-  if (hearts <= 0) { gameState = "GAMEOVER"; showScreen('over'); }
-  if (timer <= 0) { gameState = "WIN"; showScreen('win'); }
+  // AUDIO LOGIC GAME OVER / WIN: Matikan BGM saat game selesai
+  if (hearts <= 0) { 
+      bgm.pause(); 
+      gameState = "GAMEOVER"; 
+      showScreen('over'); 
+  }
+  if (timer <= 0) { 
+      bgm.pause(); 
+      gameState = "WIN"; 
+      showScreen('win'); 
+  }
 }
 
 function updateHTML_HUD() {
@@ -300,11 +348,8 @@ class IdleWord {
     let steer = createVector(screenX - this.pos.x, screenY - this.pos.y);
     steer.normalize();
     
-    if (d < 60) {
-        steer.mult(-0.05); 
-    } else {
-        steer.mult(0.03); 
-    }
+    if (d < 60) { steer.mult(-0.05); } 
+    else { steer.mult(0.03); }
     
     this.vel.add(steer);
     this.vel.limit(this.maxSpeed);
@@ -336,7 +381,6 @@ class Word {
     let negMax = isMobile ? 26 : 36;  
     
     this.baseSize = isPos ? posSize : random(negMin, negMax);
-    
     this.size = this.baseSize;
     this.pulseOffset = random(100);
   }
@@ -345,7 +389,6 @@ class Word {
     if (this.isSeeker) {
       let steer = createVector(playerX - this.pos.x, playerY - this.pos.y);
       steer.normalize();
-      // Di HP kejaran magnetiknya dibuat lebih lemah
       let turnSpeed = isMobile ? 0.1 : 0.15;
       steer.mult(this.isPos ? 0.04 : turnSpeed);
       this.vel.add(steer);
