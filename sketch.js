@@ -1,6 +1,6 @@
 let words = [];
 let encouragements = []; 
-let idleWords = []; // Array baru untuk pikiran liar di menu utama
+let idleWords = []; 
 let timer = 60;
 let gameState = "START"; 
 let score = 0;
@@ -8,6 +8,12 @@ let hearts = 3;
 let isInvincible = false;
 let invTimer = 0;
 let paused = false;
+
+// Variabel Penampung Posisi Input (Mouse vs Layar Sentuh)
+let playerX = 0;
+let playerY = 0;
+let screenX = 0;
+let screenY = 0;
 
 const QUOTES = [
   "“Kamu nggak harus kuat setiap saat. Bertahan hari ini saja, itu sudah cukup.”",
@@ -22,7 +28,7 @@ function setup() {
   noCursor();
   
   initControls(); 
-  spawnIdleWords(); // Munculkan kata-kata saat pertama kali dimuat
+  spawnIdleWords(); 
 }
 
 function initControls() {
@@ -40,7 +46,6 @@ function initControls() {
   addAction('start-btn-action', startGame);
   addAction('retry-btn', startGame);
   addAction('win-btn', startGame);
-  
   addAction('pause-btn', togglePause);
   addAction('resume-btn', togglePause);
   addAction('menu-btn-pause', backToMenu);
@@ -54,20 +59,14 @@ function initControls() {
   }
 }
 
-// ---- FUNGSI UNTUK MENU IDLE SWARM ---- //
-function spawnIdleWords() {
-  idleWords = [];
-  // Buat 15 kata negatif yang melayang di latar belakang
-  for(let i = 0; i < 15; i++) {
-    idleWords.push(new IdleWord(random(width), random(height)));
-  }
+// Mencegah canvas men-scroll halaman di HP
+function touchMoved() {
+    return false; 
 }
-
-// ---- GAME STATE FUNCTIONS ---- //
 
 function startGame() {
   words = []; encouragements = []; hearts = 3; timer = 60; score = 0;
-  idleWords = []; // Hilangkan kata-kata menu saat game mulai
+  idleWords = []; 
   isInvincible = false; paused = false;
   gameState = "PLAYING";
   
@@ -86,7 +85,7 @@ function backToMenu() {
   const hud = document.querySelector('.fn-hud');
   if (hud) hud.style.display = 'none';
   
-  spawnIdleWords(); // Munculkan kembali kata-kata saat kembali ke menu
+  spawnIdleWords(); 
   showScreen('start');
   updateHTML_HUD();
 }
@@ -110,78 +109,85 @@ function showScreen(id) {
   }
 }
 
-// ---- MAIN LOOP ---- //
+function spawnIdleWords() {
+  idleWords = [];
+  for(let i = 0; i < 15; i++) {
+    idleWords.push(new IdleWord(random(width), random(height)));
+  }
+}
 
 function draw() {
   clear(); 
-  let targetY = mouseY - 42; 
 
+  // --- LOGIKA MOUSE VS TOUCH SCREEN ---
+  if (touches.length > 0) {
+      // Jika di HP: Ambil posisi sentuhan jari pertama
+      screenX = touches[0].x;
+      screenY = touches[0].y;
+      
+      playerX = touches[0].x;
+      // OFFSET Y: Kursor in-game melayang 60px di atas jari agar terlihat
+      playerY = touches[0].y - 42 - 60; 
+  } else {
+      // Jika di PC: Ambil posisi mouse
+      screenX = mouseX;
+      screenY = mouseY;
+      
+      playerX = mouseX;
+      playerY = mouseY - 42; 
+  }
+
+  // Pindahkan Custom Cursor HTML
   let dot = document.getElementById('cursor-dot');
   if (dot) {
-      dot.style.left = mouseX + 'px';
-      dot.style.top = mouseY + 'px';
+      dot.style.left = playerX + 'px';
+      dot.style.top = (playerY + 42) + 'px';
       dot.style.opacity = (isInvincible && frameCount % 10 < 5) ? 0 : 1;
   }
 
-  // JIKA SEDANG DI MENU AWAL (IDLE)
   if (gameState === "START") {
     for (let iw of idleWords) {
       iw.update();
       iw.display();
     }
   } 
-  // JIKA GAME SEDANG DIMAINKAN
   else if (gameState === "PLAYING") {
     handleSpawning();
-    runLogic(targetY);
+    runLogic();
   }
 }
 
 function handleSpawning() {
   let timePassed = 60 - timer;
-  
-  // Kecepatan spawn (semakin kecil angkanya, semakin cepat munculnya)
   let spawnRate = floor(map(timePassed, 0, 60, 12, 5)); 
 
   if (frameCount % spawnRate === 0) {
-    
-    // --- PERUBAHAN JUMLAH SPAWN (AMT) ---
-    // Sebelumnya: let amt = timePassed > 30 ? (timePassed > 45 ? 3 : 2) : 1;
-    // Sekarang: Hanya muncul 1 kata, kecuali di 15 detik terakhir (timePassed > 45) baru muncul 2 kata.
     let amt = timePassed > 45 ? 2 : 1; 
     
     for(let i=0; i<amt; i++) {
       if (timePassed < 15) {
-        // STAGE 1 (0-15 detik): Jatuh lurus dari atas
         words.push(new Word(random(width), -30, random(-1, 1), random(5, 8), false, false));
       } else if (timePassed < 30) {
-        // STAGE 2 (15-30 detik): Menyebar dari tengah
         let angle = random(TWO_PI);
         let spd = random(5, 10);
         words.push(new Word(width/2, (height/2) - 42, cos(angle)*spd, sin(angle)*spd, false, false));
       } else {
-        // STAGE 3 (30-60 detik): Kombinasi jatuh dan sedikit seeker
         let side = floor(random(4));
         let x, y;
         let isSeeker = false;
         
-        // Hanya 30% kemungkinan kata menjadi seeker (mengejar kursor)
-        if (random(1) < 0.3) {
-            isSeeker = true;
-        }
+        if (random(1) < 0.3) isSeeker = true;
 
         if (side === 0) { x = random(width); y = -50; }
         else if (side === 1) { x = width + 50; y = random(height); }
         else if (side === 2) { x = random(width); y = height + 50; }
         else { x = -50; y = random(height); }
         
-        // Jika bukan seeker, beri kecepatan awal agar mereka terbang lurus
-        let vx = 0;
-        let vy = 0;
+        let vx = 0; let vy = 0;
         if (!isSeeker) {
             let steer = createVector(width/2 - x, height/2 - y);
             steer.normalize();
-            steer.mult(random(3, 7)); // Kecepatan terbang lurus
+            steer.mult(random(3, 7)); 
             vx = steer.x;
             vy = steer.y;
         }
@@ -191,18 +197,17 @@ function handleSpawning() {
     }
   }
 
-  // Timer & Spawning "TENANG"
   if (frameCount % 60 === 0 && timer > 0) {
     timer--; updateHTML_HUD();
     if (timer % 15 === 0) spawnEncouragement();
   }
 }
 
-function runLogic(targetY) {
+function runLogic() {
   for (let i = words.length - 1; i >= 0; i--) {
-    words[i].update(targetY);
+    words[i].update();
     words[i].display();
-    if (!isInvincible && words[i].hitsPlayer(targetY)) {
+    if (!isInvincible && words[i].hitsPlayer()) {
       hearts--; isInvincible = true; invTimer = 60;
       words.splice(i, 1); updateHTML_HUD();
     } else if (words[i].offScreen()) {
@@ -211,9 +216,9 @@ function runLogic(targetY) {
   }
 
   for (let i = encouragements.length - 1; i >= 0; i--) {
-    encouragements[i].update(targetY);
+    encouragements[i].update();
     encouragements[i].display();
-    if (encouragements[i].hitsPlayer(targetY)) {
+    if (encouragements[i].hitsPlayer()) {
       if (hearts < 3) hearts++; 
       encouragements.splice(i, 1); 
       updateHTML_HUD();
@@ -247,7 +252,6 @@ function spawnEncouragement() {
 
 // ---- OBJECT CLASSES ---- //
 
-// Kelas untuk kata-kata latar belakang di menu awal
 class IdleWord {
   constructor(x, y) {
     this.pos = createVector(x, y);
@@ -258,15 +262,15 @@ class IdleWord {
   }
 
   update() {
-    let d = dist(mouseX, mouseY, this.pos.x, this.pos.y);
-    let steer = createVector(mouseX - this.pos.x, mouseY - this.pos.y);
+    // Menghindar dari jari/kursor
+    let d = dist(screenX, screenY, this.pos.x, this.pos.y);
+    let steer = createVector(screenX - this.pos.x, screenY - this.pos.y);
     steer.normalize();
     
-    // Menghindar sedikit jika terlalu dekat dengan kursor agar tidak menumpuk jadi satu titik
     if (d < 60) {
         steer.mult(-0.05); 
     } else {
-        steer.mult(0.03); // Mendekat secara perlahan
+        steer.mult(0.03); 
     }
     
     this.vel.add(steer);
@@ -276,7 +280,6 @@ class IdleWord {
 
   display() {
     push();
-    // Warna merah dengan transparansi (opacity) agar terasa seperti bayangan
     fill('rgba(139, 26, 26, 0.4)'); 
     textFont('Nanum Pen Script');
     textSize(this.size);
@@ -287,7 +290,6 @@ class IdleWord {
   }
 }
 
-// Kelas utama untuk peluru game
 class Word {
   constructor(x, y, vx, vy, isSeeker, isPos) {
     this.pos = createVector(x, y);
@@ -300,9 +302,9 @@ class Word {
     this.pulseOffset = random(100);
   }
 
-  update(targetY) {
+  update() {
     if (this.isSeeker) {
-      let steer = createVector(mouseX - this.pos.x, targetY - this.pos.y);
+      let steer = createVector(playerX - this.pos.x, playerY - this.pos.y);
       steer.normalize();
       steer.mult(this.isPos ? 0.04 : 0.15);
       this.vel.add(steer);
@@ -333,10 +335,10 @@ class Word {
     pop();
   }
 
-  hitsPlayer(targetY) {
+  hitsPlayer() {
     let centerX = this.pos.x + (textWidth(this.text) / 2);
     let centerY = this.pos.y + (this.size / 2);
-    let d = dist(mouseX, targetY, centerX, centerY);
+    let d = dist(playerX, playerY, centerX, centerY);
     return d < (textWidth(this.text) / 1.7 + 10);
   }
 
@@ -344,8 +346,6 @@ class Word {
     return this.pos.y > height + 100 || this.pos.y < -150 || this.pos.x < -250 || this.pos.x > width + 250;
   }
 }
-
-// ---- NATIVE BROWSER INPUTS ---- //
 
 function keyPressed() { 
   if (key === ' ' || keyCode === 32) { togglePause(); return false; } 
