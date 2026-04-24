@@ -157,21 +157,16 @@ function draw() {
 
 function updateInputPositions() {
   if (touches.length > 0) {
-      // PERBAIKAN: Selalu perbarui koordinat JIKA sedang disentuh
       screenX = touches[0].x;
       screenY = touches[0].y;
       playerX = touches[0].x;
-      playerY = touches[0].y - 42 - 70; // Jarak kursor 70px di HP
+      playerY = touches[0].y - 42 - 70; // Jarak kursor 70px di atas jari HP
   } else if (!isMobile) {
-      // HANYA gunakan fungsi Mouse jika pemain bermain di PC
-      // Ini mencegah bug kursor pindah ke (0,0) saat jari dilepas di layar HP
       screenX = mouseX;
       screenY = mouseY;
       playerX = mouseX;
       playerY = mouseY - 42; 
   }
-  // Catatan: Jika di mobile dan jari diangkat (touches.length == 0), 
-  // playerX dan playerY TIDAK akan diupdate, sehingga kursor membeku/diam di posisi terakhirnya.
 }
 
 function handleSpawning() {
@@ -199,11 +194,30 @@ function handleSpawning() {
   }
 }
 
+// PERBAIKAN: MEMBAWA KEMBALI STAGE 2
 function spawnWord(timePassed, isSeeker) {
   let x, y, vx = 0, vy = 0;
-  if (timePassed < 30) {
-    x = random(width); y = -30; vy = random(4, 7);
+  
+  if (timePassed < 15) {
+    // STAGE 1 (0-15s): Jatuh lurus dari atas
+    x = random(width); 
+    y = -30; 
+    vx = random(-1, 1);
+    vy = isMobile ? random(3, 5) : random(4, 7); // Sedikit lebih lambat di HP
+    
+  } else if (timePassed < 30) {
+    // STAGE 2 (15-30s): Menyebar (Starburst) dari tengah layar
+    let angle = random(TWO_PI);
+    // Kecepatan sebar dikurangi di HP agar jari sempat menghindar
+    let spd = isMobile ? random(3, 6) : random(5, 10); 
+    
+    x = width / 2; 
+    y = (height / 2) - 42; 
+    vx = cos(angle) * spd; 
+    vy = sin(angle) * spd;
+    
   } else {
+    // STAGE 3 (30-60s): Muncul dari pinggir dan/atau mengejar
     let side = floor(random(4));
     if (side === 0) { x = random(width); y = -50; }
     else if (side === 1) { x = width + 50; y = random(height); }
@@ -211,10 +225,14 @@ function spawnWord(timePassed, isSeeker) {
     else { x = -50; y = random(height); }
     
     if (!isSeeker) {
-        let steer = createVector(width/2 - x, height/2 - y).normalize().mult(random(3, 6));
-        vx = steer.x; vy = steer.y;
+        let steer = createVector(width/2 - x, height/2 - y).normalize();
+        let spd = isMobile ? random(2.5, 5) : random(3, 6);
+        steer.mult(spd);
+        vx = steer.x; 
+        vy = steer.y;
     }
   }
+  
   words.push(new Word(x, y, vx, vy, isSeeker, false));
 }
 
@@ -327,9 +345,11 @@ class Word {
     if (this.isSeeker) {
       let steer = createVector(playerX - this.pos.x, playerY - this.pos.y);
       steer.normalize();
-      steer.mult(this.isPos ? 0.04 : 0.15);
+      // Di HP kejaran magnetiknya dibuat lebih lemah
+      let turnSpeed = isMobile ? 0.1 : 0.15;
+      steer.mult(this.isPos ? 0.04 : turnSpeed);
       this.vel.add(steer);
-      this.vel.limit(this.isPos ? 2 : 5);
+      this.vel.limit(this.isPos ? 2 : (isMobile ? 3.5 : 5));
     }
     if (this.isPos) {
       this.size = this.baseSize + sin(frameCount * 0.1 + this.pulseOffset) * 5;
