@@ -15,6 +15,9 @@ let playerY = 0;
 let screenX = 0;
 let screenY = 0;
 
+// Cek apakah perangkat adalah mobile
+const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
 const QUOTES = [
   "“Kamu nggak harus kuat setiap saat. Bertahan hari ini saja, itu sudah cukup.”",
   "“Pikiranmu mungkin ribut, tapi itu bukan berarti semuanya benar.”",
@@ -118,31 +121,14 @@ function spawnIdleWords() {
 
 function draw() {
   clear(); 
-
-  // --- LOGIKA MOUSE VS TOUCH SCREEN ---
-  if (touches.length > 0) {
-      // Jika di HP: Ambil posisi sentuhan jari pertama
-      screenX = touches[0].x;
-      screenY = touches[0].y;
-      
-      playerX = touches[0].x;
-      // OFFSET Y: Kursor in-game melayang 60px di atas jari agar terlihat
-      playerY = touches[0].y - 42 - 60; 
-  } else {
-      // Jika di PC: Ambil posisi mouse
-      screenX = mouseX;
-      screenY = mouseY;
-      
-      playerX = mouseX;
-      playerY = mouseY - 42; 
-  }
+  updateInputPositions();
 
   // Pindahkan Custom Cursor HTML
   let dot = document.getElementById('cursor-dot');
   if (dot) {
       dot.style.left = playerX + 'px';
       dot.style.top = (playerY + 42) + 'px';
-      dot.style.opacity = (isInvincible && frameCount % 10 < 5) ? 0 : 1;
+      dot.style.opacity = (isInvincible && frameCount % 10 < 5) ? 0.3 : 1;
   }
 
   if (gameState === "START") {
@@ -157,43 +143,41 @@ function draw() {
   }
 }
 
+function updateInputPositions() {
+  // --- LOGIKA MOUSE VS TOUCH SCREEN ---
+  if (touches.length > 0) {
+      screenX = touches[0].x;
+      screenY = touches[0].y;
+      playerX = touches[0].x;
+      // UX Mobile: Jarak kursor 70px di atas jari agar tidak tertutup
+      playerY = touches[0].y - 42 - 70; 
+  } else {
+      screenX = mouseX;
+      screenY = mouseY;
+      playerX = mouseX;
+      playerY = mouseY - 42; 
+  }
+}
+
 function handleSpawning() {
   let timePassed = 60 - timer;
-  let spawnRate = floor(map(timePassed, 0, 60, 12, 5)); 
+  
+  // ADJUSTMENT LEVEL: Mobile dibuat lebih lambat spawn-nya
+  let baseRate = isMobile ? 16 : 12;
+  let minRate = isMobile ? 8 : 5;
+  let spawnRate = floor(map(timePassed, 0, 60, baseRate, minRate)); 
 
   if (frameCount % spawnRate === 0) {
-    let amt = timePassed > 45 ? 2 : 1; 
+    // ADJUSTMENT LEVEL: Maksimal hanya 2 kata sekaligus di mobile
+    let amt = (timePassed > 45 && !isMobile) ? 2 : 1; 
     
     for(let i=0; i<amt; i++) {
-      if (timePassed < 15) {
-        words.push(new Word(random(width), -30, random(-1, 1), random(5, 8), false, false));
-      } else if (timePassed < 30) {
-        let angle = random(TWO_PI);
-        let spd = random(5, 10);
-        words.push(new Word(width/2, (height/2) - 42, cos(angle)*spd, sin(angle)*spd, false, false));
-      } else {
-        let side = floor(random(4));
-        let x, y;
-        let isSeeker = false;
-        
-        if (random(1) < 0.3) isSeeker = true;
+      let isSeeker = false;
+      // ADJUSTMENT LEVEL: Probabilitas seeker dikurangi di mobile (10% vs 30%)
+      let seekerChance = isMobile ? 0.1 : 0.3;
+      if (timePassed > 30 && random(1) < seekerChance) isSeeker = true;
 
-        if (side === 0) { x = random(width); y = -50; }
-        else if (side === 1) { x = width + 50; y = random(height); }
-        else if (side === 2) { x = random(width); y = height + 50; }
-        else { x = -50; y = random(height); }
-        
-        let vx = 0; let vy = 0;
-        if (!isSeeker) {
-            let steer = createVector(width/2 - x, height/2 - y);
-            steer.normalize();
-            steer.mult(random(3, 7)); 
-            vx = steer.x;
-            vy = steer.y;
-        }
-        
-        words.push(new Word(x, y, vx, vy, isSeeker, false));
-      }
+      spawnWord(timePassed, isSeeker);
     }
   }
 
@@ -201,6 +185,25 @@ function handleSpawning() {
     timer--; updateHTML_HUD();
     if (timer % 15 === 0) spawnEncouragement();
   }
+}
+
+function spawnWord(timePassed, isSeeker) {
+  let x, y, vx = 0, vy = 0;
+  if (timePassed < 30) {
+    x = random(width); y = -30; vy = random(4, 7);
+  } else {
+    let side = floor(random(4));
+    if (side === 0) { x = random(width); y = -50; }
+    else if (side === 1) { x = width + 50; y = random(height); }
+    else if (side === 2) { x = random(width); y = height + 50; }
+    else { x = -50; y = random(height); }
+    
+    if (!isSeeker) {
+        let steer = createVector(width/2 - x, height/2 - y).normalize().mult(random(3, 6));
+        vx = steer.x; vy = steer.y;
+    }
+  }
+  words.push(new Word(x, y, vx, vy, isSeeker, false));
 }
 
 function runLogic() {
@@ -262,7 +265,6 @@ class IdleWord {
   }
 
   update() {
-    // Menghindar dari jari/kursor
     let d = dist(screenX, screenY, this.pos.x, this.pos.y);
     let steer = createVector(screenX - this.pos.x, screenY - this.pos.y);
     steer.normalize();

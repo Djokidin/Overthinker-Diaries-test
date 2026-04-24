@@ -54,7 +54,7 @@ html, body {
 .fn-progress-track { flex: 1; height: 6px; background: rgba(0,0,0,0.1); border-radius: 3px; overflow: hidden; }
 #hud-progress { height: 100%; background: #1a3a1a; width: 100%; transition: width 0.3s; }
 
-/* Layar Overlay Base */
+/* Layar Overlay Base - Centering Fix */
 .screen { 
     display: none; width: 100%; height: 100%; position: absolute; inset: 0; 
     overflow: hidden; z-index: 500; flex-direction: column; align-items: center; justify-content: center; 
@@ -70,12 +70,13 @@ html, body {
 .stripe-1, .stripe-3 { height: 18px; background-color: #1a1008; } 
 .stripe-2 { height: 120px; background-color: #1a1008; }
 
-/* Desain Layar Utama (Menu) */
+/* Desain Layar Utama (Menu) - Solid & Centered */
 #start-screen { background-color: transparent; padding: 20px; position: relative; }
 .start-card {
     border: 3px solid #1a1008; border-radius: 40px; padding: 60px 40px; text-align: center;
     display: flex; flex-direction: column; align-items: center; max-width: 700px; width: 90%; 
     background: #C8A96E; position: relative; z-index: 1; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 .fn-cover-stamp { font-family: 'Special Elite', monospace; font-size: 70px; font-weight: 900; color: #1a1008; line-height: 0.9; text-transform: uppercase;}
 .underline-rule { height: 3px; background: #1a1008; margin: 15px 0 35px; width: 100%; max-width: 380px; }
@@ -111,17 +112,16 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
 
 /* =========================================
    RESPONSIVITAS MOBILE (HP)
-   Jika lebar layar 600px atau kurang, CSS ini aktif
    ========================================= */
 @media (max-width: 600px) {
-    .start-card { padding: 40px 20px; border-radius: 30px; width: 95%; }
-    .fn-cover-stamp { font-size: 45px; }
+    .start-card { padding: 40px 20px; border-radius: 30px; }
+    .fn-cover-stamp { font-size: 42px; }
     .fn-handwriting { font-size: 16px; margin-bottom: 25px; }
-    button { font-size: 16px; padding: 10px 20px; }
-    .stripe-2 { height: 80px; }
+    button { font-size: 16px; padding: 10px 25px; cursor: default; }
+    .stripe-2 { height: 90px; }
     
     .fn-hud { gap: 8px; font-size: 10px; padding: 0 8px; }
-    #hud-hearts { font-size: 12px; min-width: 70px; letter-spacing: 0; }
+    #hud-hearts { font-size: 12px; min-width: 75px; letter-spacing: -1px; }
     #pause-btn { font-size: 10px; padding: 4px 8px; }
 
     .end-title { font-size: 38px; }
@@ -156,15 +156,14 @@ button.btn-outline:hover { background: rgba(26, 16, 8, 0.1); }
             <div class="underline-rule"></div>
             <div class="fn-handwriting">
                 "Aku tahu susah, tapi sebisa mungkin jangan menyerah."<br><br>
-                Gunakan kursor/sentuhan untuk menghindari kata merah.<br>
-                Fokus adalah kunci.
+                Gunakan kursor/sentuhan untuk menghindari kata merah.
             </div>
             <button id="start-btn-action">— Buka & Tulis —</button>
         </div>
     </div>
 
     <div id="pause-screen" class="screen">
-        <div style="background: #D4B483; border: 3px solid #1a1008; padding: 30px 20px; text-align: center; max-width: 90%; border-radius: 10px; pointer-events: all; box-shadow: 5px 5px 15px rgba(0,0,0,0.3);">
+        <div style="background: #D4B483; border: 3px solid #1a1008; padding: 30px; text-align: center; max-width: 85%; border-radius: 10px; pointer-events: all; box-shadow: 5px 5px 15px rgba(0,0,0,0.3);">
             <p id="pause-quote" style="font-family: 'Kalam', cursive; font-size: 18px; font-style: italic; margin-bottom: 20px; color: #1a1008;"></p>
             <p style="font-family: 'Special Elite'; font-size: 11px; color: #5a3a10; margin-bottom: 25px;">— SENTUH UNTUK MELANJUTKAN —</p>
             <div style="display: flex; gap: 10px; justify-content: center;">
